@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RD\ErrorLog\Service;
 
+use Psr\Http\Message\ServerRequestInterface;
 use RD\ErrorLog\Domain\Model\Error;
 use RD\ErrorLog\Domain\Event\ErrorEvent;
 use RD\ErrorLog\Domain\Repository\ErrorRepository;
@@ -99,10 +100,12 @@ class LogWriter implements SingletonInterface
         $errorValues = $this->collectInformationForEvent($exception, $channel);
         $useFallbackWrite = false;
 
-        try{
+        try {
             if (GeneralUtility::getContainer()->get('boot.state')->complete) {
                 $errorValues['uid'] = $this->write($errorValues);
-                $this->dispatchErrorEvent($errorValues);
+                if (($GLOBALS['TYPO3_REQUEST'] ?? null) instanceof ServerRequestInterface) {
+                    $this->dispatchErrorEvent($errorValues);
+                }
             } else {
                 $useFallbackWrite = true;
             }
